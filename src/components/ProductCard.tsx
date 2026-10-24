@@ -1,8 +1,9 @@
-import { Heart, ShoppingCart, Eye } from "lucide-react";
+import { Heart, ShoppingCart, Eye, Scale } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Product } from "@/types";
 import { StarRating } from "./StarRating";
 import { useCart } from "@/context/CartContext";
+import { useCompare } from "@/context/CompareContext";
 
 interface ProductCardProps {
   product: Product;
@@ -10,7 +11,9 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, toggleWishlist, isInWishlist } = useCart();
+  const { toggle: toggleCompare, isSelected } = useCompare();
   const wished = isInWishlist(product.id);
+  const comparing = isSelected(product.id);
 
   return (
     <div className="group glass-dark overflow-hidden transition-all duration-300 hover:border-violet-500/40 hover:shadow-xl hover:shadow-violet-600/10">
@@ -66,6 +69,15 @@ export function ProductCard({ product }: ProductCardProps) {
             className={`btn-secondary !px-3 !py-2.5 ${wished ? "text-violet-400" : ""}`}
           >
             <Heart size={16} className={wished ? "fill-violet-400" : ""} />
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleCompare(product)}
+            aria-label={comparing ? `Remove ${product.name} from comparison` : `Add ${product.name} to comparison`}
+            aria-pressed={comparing}
+            className={`btn-secondary !px-3 !py-2.5 ${comparing ? "text-violet-300" : ""}`}
+          >
+            <Scale size={16} />
           </button>
           <Link
             to={`/product/${product.id}`}

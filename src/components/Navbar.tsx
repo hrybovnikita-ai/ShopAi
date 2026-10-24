@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, ShoppingBag, Sparkles, LogOut } from "lucide-react";
+import { Menu, X, ShoppingBag, Sparkles, LogOut, ShieldCheck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/context/AdminContext";
 
 const NAV_LINKS = [
   { label: "Home", path: "/" },
+  { label: "AI Search", path: "/discover" },
   { label: "About", path: "/about" },
   { label: "Contacts", path: "/contacts" },
   { label: "Pricing", path: "/pricing" },
@@ -18,6 +20,7 @@ export function Navbar() {
   const navigate = useNavigate();
   const { cartCount } = useCart();
   const { user, isDemo, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -77,6 +80,12 @@ export function Navbar() {
 
           {/* Right buttons */}
           <div className="hidden md:flex items-center gap-3">
+            {isAdmin && (
+              <Link to="/admin" className="btn-secondary !px-3 !py-2 text-sm">
+                <ShieldCheck size={16} className="text-violet-300" />
+                Admin
+              </Link>
+            )}
             <Link
               to="/cart"
               className="relative rounded-lg p-2 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
@@ -149,6 +158,15 @@ export function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-violet-200 hover:bg-violet-600/15 hover:text-white"
+                >
+                  <ShieldCheck size={16} />
+                  Admin Dashboard
+                </Link>
+              )}
               <Link
                 to="/cart"
                 className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white"

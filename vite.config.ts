@@ -26,6 +26,7 @@ const previewServer = previewMode
         "/auth": { target: gatewayUrl, changeOrigin: true },
         "/rest": { target: gatewayUrl, changeOrigin: true },
         "/functions": { target: gatewayUrl, changeOrigin: true },
+        "/api": { target: gatewayUrl, changeOrigin: true },
       },
     }
   : undefined;

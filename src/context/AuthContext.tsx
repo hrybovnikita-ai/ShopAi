@@ -17,7 +17,11 @@ interface AuthContextValue {
   isDemo: boolean;
   /** True when Demo Authentication Mode is available in this build. */
   demoEnabled: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  /**
+   * `useReal` bypasses Demo Authentication Mode and verifies the credentials
+   * against Supabase, which is required for administrator accounts.
+   */
+  signIn: (email: string, password: string, options?: { useReal?: boolean }) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -70,14 +74,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    if (DEMO_AUTH_ENABLED) {
+  const signIn = async (email: string, password: string, options: { useReal?: boolean } = {}) => {
+    if (DEMO_AUTH_ENABLED && !options.useReal) {
       const trimmed = email.trim();
       if (!trimmed || !password) return { error: MISSING_CREDENTIALS };
       startDemoSession(trimmed);
       return { error: null };
     }
 
+    // A real sign-in always clears any stored demo account first.
+    clearDemoAccount();
+    setIsDemo(false);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error?.message ?? null };
   };
