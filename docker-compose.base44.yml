@@ -1,0 +1,194 @@
+# Base44 sandbox environment for ShopAi.
+#
+# The Vite dev server runs from the cloned source (live reload) on host port
+# 3000. The Supabase dependency (auth, database, edge function) is provided by
+# local compose services instead of a hosted project, exposed through the
+# `gateway` service on host port 8000. See AGENTS.md for details.
+name: shopai
+
+# Local development values for the local Supabase stack: the JWT secret signs
+# the anon/service keys below, which are only valid inside this sandbox.
+x-jwt-secret: &jwt-secret shopai-local-dev-jwt-secret-min-32-characters-long
+x-anon-key: &anon-key eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzaG9wYWktbG9jYWwiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjoyMDUxMjIyNDAwfQ.8g69rdf2-oPulJ2PkGJXC0iPA9wLtUl-HSSHdFxCME8
+x-service-role-key: &service-role-key eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzaG9wYWktbG9jYWwiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjIwNTEyMjI0MDB9.62CcbYoXsvtkqZpFodli-jp7MBoqfBS3G3nCwFG9wag
+# The image demotes the `postgres` role; `supabase_admin` is its superuser.
+x-db-uri: &db-uri postgres://supabase_admin:postgres@db:5432/postgres
+
+services:
+  # Postgres preconfigured with the Supabase roles (anon, authenticated,
+  # service_role) and auth helper functions (auth.uid(), auth.role()).
+  db:
+    image: supabase/postgres:15.1.0.147
+    restart: on-failure
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - shopai_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+
+  # One-shot: applies supabase/migrations/*.sql (schema + seed products).
+  migrate:
+    image: supabase/postgres:15.1.0.147
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/opt/base44/db-init.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: supabase_admin
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    volumes:
+      - ./supabase/migrations:/migrations:ro
+      - ./scripts/base44-db-init.sh:/opt/base44/db-init.sh:ro
+
+  # Supabase GoTrue: email/password sign-in and sign-up used by AuthContext.
+  auth:
+    image: supabase/gotrue:v2.151.0
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: "9999"
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_NAMESPACE: auth
+      DATABASE_URL: *db-uri
+      GOTRUE_DB_DATABASE_URL: *db-uri
+      GOTRUE_SITE_URL: https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
+      # Public URL GoTrue uses to build email/auth links (no GOTRUE_ prefix).
+      API_EXTERNAL_URL: https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
+      GOTRUE_URI_ALLOW_LIST: "*"
+      GOTRUE_JWT_SECRET: *jwt-secret
+      GOTRUE_JWT_EXP: "3600"
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_LOG_LEVEL: info
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:9999/health >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+  # PostgREST: the `supabase.from(...)` data API over the public schema.
+  # The image is scratch-based (no shell), so it has no healthcheck of its own;
+  # the gateway below probes it together with the other API upstreams.
+  rest:
+    image: postgrest/postgrest:v12.0.2
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PGRST_DB_URI: postgres://authenticator:postgres@db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: *jwt-secret
+      PGRST_SERVER_PORT: "3000"
+      PGRST_LOG_LEVEL: info
+
+  # supabase/functions/ai-assistant served by Deno (keyword demo, no API key).
+  functions:
+    image: denoland/deno:1.45.5
+    restart: on-failure
+    entrypoint: ["deno"]
+    working_dir: /app
+    command: ["run", "--allow-net", "--allow-env", "--watch", "/app/index.ts"]
+    volumes:
+      - ./supabase/functions/ai-assistant:/app
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "deno",
+          "eval",
+          "const r = await fetch('http://127.0.0.1:8000/ai-assistant', {method: 'POST', headers: {'content-type': 'application/json'}, body: '{}'}); if (!r.ok) Deno.exit(1)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  # Routes the Supabase API paths supabase-js expects to the services above,
+  # so the browser talks to one origin and needs no CORS.
+  gateway:
+    image: nginx:alpine
+    restart: on-failure
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./.base44/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    environment:
+      ANON_KEY: *anon-key
+    depends_on:
+      auth:
+        condition: service_healthy
+      rest:
+        condition: service_started
+      functions:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O- http://127.0.0.1:8000/auth/v1/health >/dev/null && wget -q -O- --header \"apikey: $$ANON_KEY\" \"http://127.0.0.1:8000/rest/v1/products?select=id&limit=1\" >/dev/null && wget -q -O- --post-data='{}' --header 'content-type: application/json' http://127.0.0.1:8000/functions/v1/ai-assistant >/dev/null && echo ok || { echo 'API upstream check failed'; exit 1; }",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  # Vite dev server from the cloned source.
+  web:
+    image: node:22-alpine
+    restart: on-failure
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - shopai_node_modules:/app/node_modules
+    environment:
+      BASE44_PREVIEW_MODE: ${BASE44_PREVIEW_MODE:-}
+      BASE44_SANDBOX_HOST_DOMAIN: ${BASE44_SANDBOX_HOST_DOMAIN:-}
+      BASE44_PUBLIC_HOST_SUFFIX: ${BASE44_PUBLIC_HOST_SUFFIX:-}
+      BASE44_GATEWAY_URL: http://gateway:8000
+      # Same origin as the preview: the dev server proxies /auth, /rest and
+      # /functions to the gateway, so supabase-js needs no cross-origin CORS.
+      VITE_SUPABASE_URL: https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
+      VITE_SUPABASE_ANON_KEY: *anon-key
+    command:
+      [
+        "sh",
+        "-ec",
+        "npm ci --no-audit --no-fund && exec npm run dev -- --host 0.0.0.0 --port 3000",
+      ]
+    depends_on:
+      gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:3000/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+volumes:
+  shopai_db_data:
+  shopai_node_modules:
