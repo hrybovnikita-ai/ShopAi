@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, ShoppingBag, Sparkles, LogOut, User } from "lucide-react";
+import { Menu, X, ShoppingBag, Sparkles, LogOut, ShieldCheck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/context/AdminContext";
 
 const NAV_LINKS = [
   { label: "Home", path: "/" },
+  { label: "AI Search", path: "/discover" },
   { label: "About", path: "/about" },
   { label: "Contacts", path: "/contacts" },
   { label: "Pricing", path: "/pricing" },
@@ -17,7 +19,8 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { cartCount } = useCart();
-  const { user, signOut } = useAuth();
+  const { user, isDemo, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -77,6 +80,12 @@ export function Navbar() {
 
           {/* Right buttons */}
           <div className="hidden md:flex items-center gap-3">
+            {isAdmin && (
+              <Link to="/admin" className="btn-secondary !px-3 !py-2 text-sm">
+                <ShieldCheck size={16} className="text-violet-300" />
+                Admin
+              </Link>
+            )}
             <Link
               to="/cart"
               className="relative rounded-lg p-2 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
@@ -93,8 +102,17 @@ export function Navbar() {
             {user ? (
               <>
                 <span className="flex items-center gap-2 text-sm text-gray-300">
-                  <User size={18} className="text-violet-400" />
-                  {user.email}
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full gradient-bg text-xs font-bold uppercase text-white shadow-lg shadow-violet-600/30">
+                    {(user.email ?? "?").charAt(0).toUpperCase()}
+                  </span>
+                  <span className="hidden sm:flex flex-col leading-tight">
+                    <span className="max-w-[14rem] truncate">{user.email}</span>
+                    {isDemo && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-300">
+                        Demo · temporary
+                      </span>
+                    )}
+                  </span>
                 </span>
                 <button onClick={handleSignOut} className="btn-ghost">
                   <LogOut size={16} />
@@ -140,6 +158,15 @@ export function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-violet-200 hover:bg-violet-600/15 hover:text-white"
+                >
+                  <ShieldCheck size={16} />
+                  Admin Dashboard
+                </Link>
+              )}
               <Link
                 to="/cart"
                 className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white"
@@ -153,13 +180,28 @@ export function Navbar() {
               </Link>
               <div className="pt-2 border-t border-white/10 space-y-2">
                 {user ? (
-                  <button
-                    onClick={handleSignOut}
-                    className="btn-secondary w-full"
-                  >
-                    <LogOut size={16} />
-                    Sign Out
-                  </button>
+                  <>
+                    <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full gradient-bg text-xs font-bold uppercase text-white">
+                        {(user.email ?? "?").charAt(0).toUpperCase()}
+                      </span>
+                      <span className="min-w-0 flex flex-col leading-tight">
+                        <span className="truncate">{user.email}</span>
+                        {isDemo && (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-300">
+                            Demo · temporary
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleSignOut}
+                      className="btn-secondary w-full"
+                    >
+                      <LogOut size={16} />
+                      Sign Out
+                    </button>
+                  </>
                 ) : (
                   <>
                     <Link to="/signin" className="btn-secondary w-full">

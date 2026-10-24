@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Sparkles, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { DemoModeNotice } from "@/components/DemoModeNotice";
 
 export function SignIn() {
   const [email, setEmail] = useState("");
@@ -9,7 +10,8 @@ export function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [useRealAccount, setUseRealAccount] = useState(false);
+  const { signIn, demoEnabled } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,13 +19,13 @@ export function SignIn() {
     setError(null);
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(email, password, { useReal: useRealAccount });
     setLoading(false);
 
     if (error) {
       setError(error);
     } else {
-      navigate("/");
+      navigate(useRealAccount ? "/admin" : "/");
     }
   };
 
@@ -39,6 +41,32 @@ export function SignIn() {
         </div>
 
         <form onSubmit={handleSubmit} className="glass-dark p-8 space-y-5">
+          {demoEnabled && !useRealAccount && <DemoModeNotice />}
+
+          {demoEnabled && (
+            <label className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs text-gray-300">
+              <input
+                type="checkbox"
+                checked={useRealAccount}
+                onChange={(event) => setUseRealAccount(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-white/20 bg-ink-800 text-violet-600"
+              />
+              <span>
+                Sign in with a real account
+                <span className="mt-0.5 block text-gray-500">
+                  Skips demo mode and verifies the credentials with Supabase. Required for administrators.
+                </span>
+              </span>
+            </label>
+          )}
+
+          {demoEnabled && useRealAccount && import.meta.env.DEV && (
+            <p className="rounded-xl border border-violet-500/20 bg-violet-500/10 px-3 py-2 text-xs text-violet-200">
+              Local sandbox administrator: <span className="font-medium">admin@shopai.dev</span> /{" "}
+              <span className="font-medium">ShopAiAdmin!2026</span>
+            </p>
+          )}
+
           {error && (
             <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300">
               <AlertCircle size={16} />

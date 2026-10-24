@@ -9,6 +9,9 @@ export interface Product {
   stock: number;
   features: string[];
   created_at: string;
+  /** Added by the administrator backend; absent on older records. */
+  is_active?: boolean;
+  updated_at?: string;
 }
 
 export interface CartItem {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CreditCard, Apple, Smartphone, Check, ShoppingBag, ArrowLeft, Lock } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { apiRequest } from "@/lib/api";
 
 type PaymentMethod = "visa" | "mastercard" | "applepay" | "googlepay";
 
@@ -18,6 +19,8 @@ export function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("visa");
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -37,15 +40,35 @@ export function Checkout() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessing(true);
+    setCheckoutError(null);
 
-    // Demo checkout — simulates a payment processor call
-    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      // The API validates prices and stock server-side and writes the order
+      // (order + line items + inventory decrement) in one transaction.
+      const result = await apiRequest<{ order: { id: string; number: string; total: number; tax: number } }>("/orders", {
+        method: "POST",
+        body: {
+          customer_name: form.fullName,
+          customer_email: form.email,
+          items: items.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
+          shipping_address: {
+            address: form.address,
+            city: form.city,
+            zip_code: form.zipCode,
+            country: form.country,
+          },
+        },
+      });
 
-    setProcessing(false);
-    setSuccess(true);
-    clearCart();
-
-    setTimeout(() => navigate("/"), 4000);
+      setOrderNumber(result.order.number);
+      setSuccess(true);
+      clearCart();
+      setTimeout(() => navigate("/"), 6000);
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : "Checkout is unavailable right now. Please try again.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   if (success) {
@@ -57,8 +80,11 @@ export function Checkout() {
           </div>
           <h1 className="font-display text-3xl font-bold text-white">Order Confirmed!</h1>
           <p className="mt-3 text-gray-400">
-            Thank you for your purchase. Your order has been placed successfully. You will receive a confirmation email shortly.
+            Your order has been recorded in the ShopAi database. Keep the order number below for reference.
           </p>
+          {orderNumber && (
+            <p className="mt-3 font-mono text-sm text-violet-200">Order #{orderNumber}</p>
+          )}
           <p className="mt-4 text-sm text-violet-300">Redirecting to home page...</p>
         </div>
       </div>
@@ -225,6 +251,12 @@ export function Checkout() {
                   </span>
                 </div>
               </div>
+
+              {checkoutError && (
+                <p role="alert" className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                  {checkoutError}
+                </p>
+              )}
 
               <button
                 type="submit"
