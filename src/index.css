@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-ink-800;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-ink-950 text-gray-200 font-sans antialiased;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(139, 63, 255, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(45, 127, 255, 0.06) 0%, transparent 40%);
+    background-attachment: fixed;
+  }
+  ::selection {
+    @apply bg-violet-600/40 text-white;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+  }
+  .glass-dark {
+    @apply bg-ink-900/60 backdrop-blur-xl border border-white/10 rounded-2xl;
+  }
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-violet-300 to-blue-400;
+  }
+  .gradient-bg {
+    @apply bg-gradient-to-br from-violet-600 via-violet-500 to-blue-600;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold text-white
+           bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500
+           shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40
+           transition-all duration-300 hover:scale-[1.02] active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold text-violet-200
+           glass hover:bg-white/10 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-400
+           hover:text-white hover:bg-white/5 transition-all duration-200;
+  }
+  .input-field {
+    @apply w-full rounded-xl bg-ink-850/80 border border-white/10 px-4 py-3 text-white placeholder-gray-500
+           focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition-all duration-200;
+  }
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8 py-16 md:py-24;
+  }
+  .container-max {
+    @apply max-w-7xl mx-auto;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0612;
+}
+::-webkit-scrollbar-thumb {
+  background: #261a4d;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3d2a73;
+}
