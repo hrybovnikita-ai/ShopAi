@@ -40,6 +40,20 @@ has no hosted Supabase project, so the Supabase backend it depends on
   flag unset, Vite behaves exactly as before. `VITE_SUPABASE_URL` points at the
   preview origin (port 3000) for the same reason.
 
+## Demo Authentication Mode
+
+`src/lib/demoAuth.ts` + the demo branch in `src/context/AuthContext.tsx` let a
+visitor sign in with any email and any non-empty password. Demo accounts never
+call Supabase: the email/name live in `localStorage` (`shopai.demoAccount`), no
+password is stored, and no JWT is issued.
+
+- Enabled while `import.meta.env.DEV` is true (i.e. the preview dev server) or
+  when `VITE_DEMO_AUTH=true`; `VITE_DEMO_AUTH=false` disables it anywhere.
+- Production builds have `DEV=false`, so demo mode is off and real Supabase
+  authentication is unchanged.
+- Because demo users hold no token, PostgREST/GoTrue still enforce RLS: demo
+  accounts cannot touch orders, contact messages or other user data.
+
 ## Verify it works
 
 ```sh

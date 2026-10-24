@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Eye, EyeOff, Sparkles, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { DemoModeNotice } from "@/components/DemoModeNotice";
 
 export function SignUp() {
   const [fullName, setFullName] = useState("");
@@ -11,7 +12,7 @@ export function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, demoEnabled } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,6 +51,8 @@ export function SignUp() {
         </div>
 
         <form onSubmit={handleSubmit} className="glass-dark p-8 space-y-5">
+          {demoEnabled && <DemoModeNotice />}
+
           {error && (
             <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300">
               <AlertCircle size={16} />

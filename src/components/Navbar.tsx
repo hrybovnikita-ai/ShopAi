@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, ShoppingBag, Sparkles, LogOut, User } from "lucide-react";
+import { Menu, X, ShoppingBag, Sparkles, LogOut } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -17,7 +17,7 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { cartCount } = useCart();
-  const { user, signOut } = useAuth();
+  const { user, isDemo, signOut } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -93,8 +93,17 @@ export function Navbar() {
             {user ? (
               <>
                 <span className="flex items-center gap-2 text-sm text-gray-300">
-                  <User size={18} className="text-violet-400" />
-                  {user.email}
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full gradient-bg text-xs font-bold uppercase text-white shadow-lg shadow-violet-600/30">
+                    {(user.email ?? "?").charAt(0).toUpperCase()}
+                  </span>
+                  <span className="hidden sm:flex flex-col leading-tight">
+                    <span className="max-w-[14rem] truncate">{user.email}</span>
+                    {isDemo && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-300">
+                        Demo · temporary
+                      </span>
+                    )}
+                  </span>
                 </span>
                 <button onClick={handleSignOut} className="btn-ghost">
                   <LogOut size={16} />
@@ -153,13 +162,28 @@ export function Navbar() {
               </Link>
               <div className="pt-2 border-t border-white/10 space-y-2">
                 {user ? (
-                  <button
-                    onClick={handleSignOut}
-                    className="btn-secondary w-full"
-                  >
-                    <LogOut size={16} />
-                    Sign Out
-                  </button>
+                  <>
+                    <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full gradient-bg text-xs font-bold uppercase text-white">
+                        {(user.email ?? "?").charAt(0).toUpperCase()}
+                      </span>
+                      <span className="min-w-0 flex flex-col leading-tight">
+                        <span className="truncate">{user.email}</span>
+                        {isDemo && (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-300">
+                            Demo · temporary
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleSignOut}
+                      className="btn-secondary w-full"
+                    >
+                      <LogOut size={16} />
+                      Sign Out
+                    </button>
+                  </>
                 ) : (
                   <>
                     <Link to="/signin" className="btn-secondary w-full">
