@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, ShoppingBag, Sparkles, LogOut, ShieldCheck } from "lucide-react";
+import { Menu, X, ShoppingBag, Heart, Sparkles, LogOut, ShieldCheck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useAdmin } from "@/context/AdminContext";
 
 const NAV_LINKS = [
   { label: "Home", path: "/" },
+  { label: "Shop", path: "/shop" },
   { label: "AI Search", path: "/discover" },
   { label: "About", path: "/about" },
   { label: "Contacts", path: "/contacts" },
@@ -18,7 +19,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { cartCount } = useCart();
+  const { cartCount, wishlist } = useCart();
   const { user, isDemo, signOut } = useAuth();
   const { isAdmin } = useAdmin();
 
@@ -86,6 +87,18 @@ export function Navbar() {
                 Admin
               </Link>
             )}
+            <Link
+              to="/wishlist"
+              className="relative rounded-lg p-2 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+              aria-label={`Wishlist, ${wishlist.length} saved`}
+            >
+              <Heart size={22} />
+              {wishlist.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-violet-600 px-1 text-xs font-bold text-white">
+                  {wishlist.length}
+                </span>
+              )}
+            </Link>
             <Link
               to="/cart"
               className="relative rounded-lg p-2 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
@@ -167,6 +180,17 @@ export function Navbar() {
                   Admin Dashboard
                 </Link>
               )}
+              <Link
+                to="/wishlist"
+                className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white"
+              >
+                <span>Wishlist</span>
+                {wishlist.length > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-violet-600 px-1 text-xs font-bold text-white">
+                    {wishlist.length}
+                  </span>
+                )}
+              </Link>
               <Link
                 to="/cart"
                 className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white"

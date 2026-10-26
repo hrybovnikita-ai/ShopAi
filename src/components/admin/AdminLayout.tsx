@@ -9,6 +9,7 @@ import {
   Tags,
   Users,
   Activity,
+  MessageSquare,
   Loader2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -20,6 +21,7 @@ const ADMIN_LINKS = [
   { to: "/admin/categories", label: "Categories", icon: Tags, end: false },
   { to: "/admin/orders", label: "Orders", icon: ReceiptText, end: false },
   { to: "/admin/customers", label: "Customers", icon: Users, end: false },
+  { to: "/admin/reviews", label: "Reviews", icon: MessageSquare, end: false },
   { to: "/admin/monitor", label: "System Monitor", icon: Activity, end: false },
 ];
 

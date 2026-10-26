@@ -7,6 +7,7 @@ import { ToastProvider } from "@/components/Toast";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CompareBar } from "@/components/CompareBar";
+import { FloatingAssistant } from "@/components/assistant/FloatingAssistant";
 import { Home } from "@/pages/Home";
 import { About } from "@/pages/About";
 import { Contacts } from "@/pages/Contacts";
@@ -15,6 +16,8 @@ import { SignIn } from "@/pages/SignIn";
 import { SignUp } from "@/pages/SignUp";
 import { Cart } from "@/pages/Cart";
 import { Checkout } from "@/pages/Checkout";
+import { Shop } from "@/pages/Shop";
+import { Wishlist } from "@/pages/Wishlist";
 import { ProductDetail } from "@/pages/ProductDetail";
 import { SemanticSearch } from "@/pages/SemanticSearch";
 import { Compare } from "@/pages/Compare";
@@ -24,6 +27,7 @@ import { AdminProducts } from "@/pages/admin/AdminProducts";
 import { AdminCategories } from "@/pages/admin/AdminCategories";
 import { AdminOrders } from "@/pages/admin/AdminOrders";
 import { AdminCustomers } from "@/pages/admin/AdminCustomers";
+import { AdminReviews } from "@/pages/admin/AdminReviews";
 import { AdminMonitor } from "@/pages/admin/AdminMonitor";
 import { ScrollToTop } from "@/components/ScrollToTop";
 
@@ -40,6 +44,8 @@ export default function App() {
               <main className="min-h-screen pt-16">
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contacts" element={<Contacts />} />
                   <Route path="/pricing" element={<Pricing />} />
@@ -63,11 +69,13 @@ export default function App() {
                     <Route path="categories" element={<AdminCategories />} />
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="customers" element={<AdminCustomers />} />
+                    <Route path="reviews" element={<AdminReviews />} />
                     <Route path="monitor" element={<AdminMonitor />} />
                   </Route>
                 </Routes>
               </main>
               <Footer />
+              <FloatingAssistant />
             </CompareProvider>
           </CartProvider>
         </AdminProvider>

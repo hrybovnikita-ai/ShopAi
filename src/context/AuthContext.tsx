@@ -85,7 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // A real sign-in always clears any stored demo account first.
     clearDemoAccount();
     setIsDemo(false);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    // A demo session short-circuits the mount effect above, so no auth listener
+    // is attached: apply the new session here so the UI leaves demo mode.
+    if (data.session) {
+      setSession(data.session);
+      setUser(data.session.user);
+      setLoading(false);
+    }
     return { error: error?.message ?? null };
   };
 
@@ -97,11 +104,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: null };
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } },
     });
+    if (data.session) {
+      setSession(data.session);
+      setUser(data.session.user);
+      setLoading(false);
+    }
     return { error: error?.message ?? null };
   };
 

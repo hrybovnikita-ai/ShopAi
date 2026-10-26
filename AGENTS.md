@@ -40,6 +40,37 @@ has no hosted Supabase project, so the Supabase backend it depends on
   flag unset, Vite behaves exactly as before. `VITE_SUPABASE_URL` points at the
   preview origin (port 3000) for the same reason.
 
+## Catalog, reviews and wishlist
+
+- **Catalog API** (`supabase/functions/api/routes/catalog.ts`): `GET /api/catalog`
+  (search, category, brand, price, rating, stock, six sort modes, pagination,
+  facets), `GET /api/catalog/suggest?q=`, `GET /api/catalog/:id`. Ratings come
+  from `product_review_stats` (published reviews only) and popularity from the
+  aggregate `product_popularity` view — the API never invents a score.
+- **Reviews** (`product_reviews`): one row per customer/product. A trigger
+  (`product_reviews_guard`) computes `verified_purchase` from real
+  paid/shipped/delivered orders, rejects links/contact details, and only lets
+  administrators (or the service-role API) change `status`. Review images are
+  resized in the browser (`src/lib/image.ts`) and stored as small data URLs.
+- **Wishlist** (`wishlists`): owner-scoped rows. `CartContext` stores the cart
+  and wishlist in `localStorage` and, for a real Supabase session, syncs the
+  wishlist to the table. Demo accounts have no JWT, so their wishlist stays
+  local.
+- **Grants**: the `supabase/postgres` image grants ALL on new tables to
+  `anon`/`authenticated` by default. `20261026130000_tighten_grants.sql` strips
+  that back to the minimum — check it before adding a table.
+
+## AI assistant
+
+- Server route `POST /api/assistant/chat` (`routes/assistant.ts`) always
+  retrieves real products first, then lets an LLM write the prose.
+- `OPENAI_API_KEY` is read server-side from `/run/base44/app.env` only. Without
+  it the endpoint returns `configured: false` plus a setup hint and real catalog
+  matches — the UI shows an "AI provider required" banner. It never fakes an AI
+  answer.
+- Model/embedding names are configurable via `OPENAI_MODEL` and
+  `OPENAI_EMBEDDING_MODEL`.
+
 ## Demo Authentication Mode
 
 `src/lib/demoAuth.ts` + the demo branch in `src/context/AuthContext.tsx` let a
@@ -71,3 +102,16 @@ curl -s -H "apikey: $ANON" 'localhost:8000/rest/v1/products?select=name&limit=2'
 Edits to `src/` hot-reload; edits under `supabase/functions/` reload via Deno
 `--watch`; migration changes need the `shopai_db_data` volume removed (or a new
 migration file plus a restart of `migrate`).
+
+New API surfaces worth curling (through the gateway on :8000):
+
+```sh
+curl -s 'localhost:8000/api/catalog?category=Computers&sort=price_asc&pageSize=3'
+curl -s 'localhost:8000/api/catalog/suggest?q=aur'
+curl -s -X POST localhost:8000/api/assistant/chat \
+  -H 'content-type: application/json' -d '{"message":"headphones under $200"}'
+```
+
+`deno check` reports a few pre-existing type errors in
+`supabase/functions/api/routes/public.ts` (the search result mapping types); the
+service runs correctly and the new files type-check clean.

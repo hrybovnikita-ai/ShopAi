@@ -18,7 +18,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
-import { AIAssistant } from "@/components/AIAssistant";
 import { useProducts } from "@/hooks/useProducts";
 import { CATEGORIES } from "@/data/catalog";
 
@@ -103,9 +102,9 @@ export function Home() {
           {/* Stats */}
           <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
             {[
-              { label: "Products", value: "10K+" },
-              { label: "AI Recommendations", value: "1M+" },
-              { label: "Happy Customers", value: "50K+" },
+              { label: "Live products", value: String(products.length) },
+              { label: "Categories", value: String(new Set(products.map((product) => product.category)).size) },
+              { label: "In stock now", value: String(products.filter((product) => product.stock > 0).length) },
             ].map((stat) => (
               <div key={stat.label}>
                 <div className="font-display text-3xl font-bold gradient-text">{stat.value}</div>
@@ -168,16 +167,17 @@ export function Home() {
             {CATEGORIES.map((cat) => {
               const Icon = CATEGORY_ICONS[cat.icon] ?? Cpu;
               return (
-                <div
+                <Link
                   key={cat.id}
-                  className="group glass-dark p-6 cursor-pointer transition-all duration-300 hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-600/10 hover:-translate-y-1"
+                  to={`/shop?category=${encodeURIComponent(cat.name)}`}
+                  className="group glass-dark p-6 transition-all duration-300 hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-600/10 hover:-translate-y-1"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-bg shadow-lg shadow-violet-600/20 mb-4 transition-transform group-hover:scale-110">
                     <Icon size={24} className="text-white" />
                   </div>
                   <h3 className="font-display font-semibold text-white">{cat.name}</h3>
                   <p className="mt-1 text-xs text-gray-400">{cat.description}</p>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -221,8 +221,39 @@ export function Home() {
               </div>
             </div>
 
-            <div>
-              <AIAssistant />
+            <div className="glass-dark p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl gradient-bg shadow-lg shadow-violet-600/30">
+                  <Bot size={22} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="font-display font-semibold text-white">Talk to the shopping assistant</h3>
+                  <p className="text-xs text-violet-300">Floating button, bottom-right</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-gray-400">
+                Describe a budget, a use case or a category and the assistant answers with product
+                cards pulled from the live catalog — real prices, real stock, real links.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-gray-300">
+                {["Recommendations within your budget", "Compare specs side by side", "Add to cart without leaving the chat"].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent("shopai:open-assistant"))}
+                className="btn-primary mt-6 w-full justify-center"
+              >
+                <Bot size={18} />
+                Open the assistant
+              </button>
+              <p className="mt-3 text-xs leading-relaxed text-gray-500">
+                Conversational answers require a configured AI provider. Until then the assistant
+                says so explicitly and still returns matching catalog products.
+              </p>
             </div>
           </div>
         </div>

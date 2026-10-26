@@ -19,6 +19,19 @@ import {
   handleSemanticSearch,
 } from "./routes/public.ts";
 import {
+  handleCatalog,
+  handleCatalogProduct,
+  handleCatalogSuggest,
+} from "./routes/catalog.ts";
+import {
+  handleAssistantChat,
+  handleAssistantStatus,
+} from "./routes/assistant.ts";
+import {
+  handleListReviews,
+  handleModerateReview,
+} from "./routes/reviews.ts";
+import {
   handleAdminSession,
   handleAdminStats,
   handleCreateCategory,
@@ -57,9 +70,18 @@ const ROUTES: RouteDefinition[] = [
   { method: "GET", pattern: "/", access: "public", handler: handleHealth },
   { method: "GET", pattern: "/health", access: "public", handler: handleHealth },
 
+  { method: "GET", pattern: "/catalog", access: "public", handler: handleCatalog },
+  { method: "GET", pattern: "/catalog/suggest", access: "public", handler: handleCatalogSuggest },
+  { method: "GET", pattern: "/catalog/:id", access: "public", handler: handleCatalogProduct },
+  { method: "GET", pattern: "/assistant/status", access: "public", handler: handleAssistantStatus },
+  { method: "POST", pattern: "/assistant/chat", access: "public", handler: handleAssistantChat },
+
   { method: "POST", pattern: "/search/semantic", access: "public", handler: handleSemanticSearch },
   { method: "POST", pattern: "/ai/compare", access: "public", handler: handleCompare },
   { method: "POST", pattern: "/orders", access: "public", handler: handleCreateOrder },
+
+  { method: "GET", pattern: "/admin/reviews", access: "admin", handler: handleListReviews },
+  { method: "PATCH", pattern: "/admin/reviews/:id", access: "admin", handler: handleModerateReview },
 
   { method: "GET", pattern: "/admin/session", access: "public", handler: handleAdminSession },
   { method: "GET", pattern: "/admin/stats", access: "admin", handler: handleAdminStats },
