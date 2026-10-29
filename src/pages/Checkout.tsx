@@ -1,20 +1,31 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CreditCard, Apple, Smartphone, Check, ShoppingBag, ArrowLeft, Lock } from "lucide-react";
+import { CreditCard, Apple, Smartphone, Check, ShoppingBag, ArrowLeft, Lock, Wallet, AlertCircle } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { apiRequest } from "@/lib/api";
 
-type PaymentMethod = "visa" | "mastercard" | "applepay" | "googlepay";
+type PaymentMethod = "visa" | "mastercard" | "applepay" | "googlepay" | "paypal";
 
 const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; icon: typeof CreditCard }[] = [
   { id: "visa", label: "Visa", icon: CreditCard },
   { id: "mastercard", label: "Mastercard", icon: CreditCard },
   { id: "applepay", label: "Apple Pay", icon: Apple },
   { id: "googlepay", label: "Google Pay", icon: Smartphone },
+  { id: "paypal", label: "PayPal", icon: Wallet },
 ];
 
+const SHIPPING_FREE_THRESHOLD = 100;
+const SHIPPING_FLAT = 9.99;
+
 export function Checkout() {
-  const { items, cartTotal, clearCart } = useCart();
+  const {
+    items,
+    cartTotal,
+    clearCart,
+    discountCode,
+    discountPercent,
+    discountAmount,
+  } = useCart();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("visa");
   const [processing, setProcessing] = useState(false);
@@ -30,8 +41,9 @@ export function Checkout() {
     country: "United States",
   });
 
-  const tax = cartTotal * 0.08;
-  const total = cartTotal + tax;
+  const shipping = cartTotal >= SHIPPING_FREE_THRESHOLD ? 0 : SHIPPING_FLAT;
+  const tax = Math.max(0, cartTotal - discountAmount) * 0.08;
+  const total = Math.max(0, cartTotal - discountAmount) + shipping + tax;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,8 +55,6 @@ export function Checkout() {
     setCheckoutError(null);
 
     try {
-      // The API validates prices and stock server-side and writes the order
-      // (order + line items + inventory decrement) in one transaction.
       const result = await apiRequest<{ order: { id: string; number: string; total: number; tax: number } }>("/orders", {
         method: "POST",
         body: {
@@ -63,7 +73,7 @@ export function Checkout() {
       setOrderNumber(result.order.number);
       setSuccess(true);
       clearCart();
-      setTimeout(() => navigate("/"), 6000);
+      setTimeout(() => navigate("/orders"), 4000);
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : "Checkout is unavailable right now. Please try again.");
     } finally {
@@ -80,12 +90,17 @@ export function Checkout() {
           </div>
           <h1 className="font-display text-3xl font-bold text-white">Order Confirmed!</h1>
           <p className="mt-3 text-gray-400">
-            Your order has been recorded in the ShopAi database. Keep the order number below for reference.
+            Your demo order has been recorded. No real payment was processed.
           </p>
           {orderNumber && (
             <p className="mt-3 font-mono text-sm text-violet-200">Order #{orderNumber}</p>
           )}
-          <p className="mt-4 text-sm text-violet-300">Redirecting to home page...</p>
+          <div className="mt-6 flex flex-col gap-3">
+            <Link to="/orders" className="btn-primary justify-center">
+              View Order History
+            </Link>
+            <p className="text-sm text-violet-300">Redirecting to your orders...</p>
+          </div>
         </div>
       </div>
     );
@@ -117,6 +132,14 @@ export function Checkout() {
         </Link>
 
         <h1 className="font-display text-3xl md:text-4xl font-bold text-white mb-8">Checkout</h1>
+
+        {/* DEMO PAYMENT banner */}
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-violet-500/30 bg-violet-600/10 px-5 py-4">
+          <AlertCircle size={20} className="shrink-0 text-violet-300" />
+          <p className="text-sm font-medium text-violet-100">
+            DEMO PAYMENT — NO REAL MONEY WILL BE CHARGED. This is a simulated checkout for demonstration purposes only.
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Shipping + Payment */}
@@ -162,7 +185,7 @@ export function Checkout() {
             {/* Payment */}
             <div className="glass-dark p-6">
               <h2 className="font-display text-xl font-bold text-white mb-4">Payment Method</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
                 {PAYMENT_OPTIONS.map((opt) => (
                   <button
                     key={opt.id}
@@ -183,7 +206,7 @@ export function Checkout() {
               {(paymentMethod === "visa" || paymentMethod === "mastercard") && (
                 <div className="space-y-4 animate-fade-in">
                   <div>
-                    <label className="block text-sm text-gray-300 mb-2">Card Number</label>
+                    <label className="block text-sm text-gray-300 mb-2">Card Number (Test)</label>
                     <input type="text" placeholder="4242 4242 4242 4242" className="input-field" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -196,6 +219,13 @@ export function Checkout() {
                       <input type="text" placeholder="123" className="input-field" />
                     </div>
                   </div>
+                  <p className="text-xs text-gray-500">Test card preset — do not enter real card details.</p>
+                </div>
+              )}
+
+              {paymentMethod === "paypal" && (
+                <div className="rounded-xl bg-white/5 p-4 text-center text-sm text-gray-400 animate-fade-in">
+                  You will be redirected to PayPal (demo) to complete your purchase securely.
                 </div>
               )}
 
@@ -207,7 +237,7 @@ export function Checkout() {
 
               <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
                 <Lock size={14} />
-                This is a safe demonstration checkout. No real payment will be processed.
+                This is a safe demonstration checkout. No real payment will be processed and no card details are stored.
               </div>
             </div>
           </div>
@@ -236,9 +266,17 @@ export function Checkout() {
                   <span>Subtotal</span>
                   <span className="text-white">${cartTotal.toFixed(2)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-violet-300">
+                    <span>Discount ({discountPercent}%) {discountCode && `· ${discountCode}`}</span>
+                    <span>-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-400">
                   <span>Shipping</span>
-                  <span className="text-green-400">Free</span>
+                  <span className={shipping === 0 ? "text-green-400" : "text-white"}>
+                    {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
+                  </span>
                 </div>
                 <div className="flex justify-between text-gray-400">
                   <span>Tax (8%)</span>
@@ -271,10 +309,14 @@ export function Checkout() {
                 ) : (
                   <>
                     <Lock size={18} />
-                    Place Order
+                    Place Demo Order
                   </>
                 )}
               </button>
+
+              <p className="mt-3 text-center text-xs text-gray-500">
+                By placing this order you acknowledge this is a demo checkout.
+              </p>
             </div>
           </div>
         </form>

@@ -18,6 +18,9 @@ import { Checkout } from "@/pages/Checkout";
 import { ProductDetail } from "@/pages/ProductDetail";
 import { SemanticSearch } from "@/pages/SemanticSearch";
 import { Compare } from "@/pages/Compare";
+import { Wishlist } from "@/pages/Wishlist";
+import { OrderHistory } from "@/pages/OrderHistory";
+import { Dashboard } from "@/pages/Dashboard";
 import { AdminLayout, RequireAdmin } from "@/components/admin/AdminLayout";
 import { AdminOverview } from "@/pages/admin/AdminOverview";
 import { AdminProducts } from "@/pages/admin/AdminProducts";
@@ -50,6 +53,9 @@ export default function App() {
                   <Route path="/product/:id" element={<ProductDetail />} />
                   <Route path="/discover" element={<SemanticSearch />} />
                   <Route path="/compare" element={<Compare />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/orders" element={<OrderHistory />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route
                     path="/admin"
                     element={

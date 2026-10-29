@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, ShoppingBag, Sparkles, LogOut, ShieldCheck } from "lucide-react";
+import { Menu, X, ShoppingBag, Sparkles, LogOut, ShieldCheck, Heart, LayoutDashboard } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useAdmin } from "@/context/AdminContext";
@@ -87,6 +87,13 @@ export function Navbar() {
               </Link>
             )}
             <Link
+              to="/wishlist"
+              className="relative rounded-lg p-2 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+              aria-label="Wishlist"
+            >
+              <Heart size={22} />
+            </Link>
+            <Link
               to="/cart"
               className="relative rounded-lg p-2 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
               aria-label="Shopping cart"
@@ -114,6 +121,10 @@ export function Navbar() {
                     )}
                   </span>
                 </span>
+                <Link to="/dashboard" className="btn-secondary !px-3 !py-2 text-sm">
+                  <LayoutDashboard size={16} className="text-violet-300" />
+                  Dashboard
+                </Link>
                 <button onClick={handleSignOut} className="btn-ghost">
                   <LogOut size={16} />
                   Sign Out
@@ -168,6 +179,13 @@ export function Navbar() {
                 </Link>
               )}
               <Link
+                to="/wishlist"
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white"
+              >
+                <Heart size={16} />
+                Wishlist
+              </Link>
+              <Link
                 to="/cart"
                 className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white"
               >
@@ -177,6 +195,13 @@ export function Navbar() {
                     {cartCount}
                   </span>
                 )}
+              </Link>
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white"
+              >
+                <LayoutDashboard size={16} />
+                Dashboard
               </Link>
               <div className="pt-2 border-t border-white/10 space-y-2">
                 {user ? (
@@ -201,6 +226,7 @@ export function Navbar() {
                       <LogOut size={16} />
                       Sign Out
                     </button>
+                  </>
                   </>
                 ) : (
                   <>

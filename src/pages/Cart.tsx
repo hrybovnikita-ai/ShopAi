@@ -1,9 +1,43 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingBag, Minus, Plus, Trash2, ArrowRight } from "lucide-react";
+import { ShoppingBag, Minus, Plus, Trash2, ArrowRight, Tag, X, Check } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useToast } from "@/components/Toast";
+
+const SHIPPING_FREE_THRESHOLD = 100;
+const SHIPPING_FLAT = 9.99;
 
 export function Cart() {
-  const { items, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
+  const {
+    items,
+    updateQuantity,
+    removeFromCart,
+    cartTotal,
+    clearCart,
+    discountCode,
+    discountPercent,
+    discountAmount,
+    applyDiscountCode,
+    removeDiscountCode,
+  } = useCart();
+  const { push } = useToast();
+  const [codeInput, setCodeInput] = useState("");
+
+  const shipping = cartTotal >= SHIPPING_FREE_THRESHOLD || cartTotal === 0 ? 0 : SHIPPING_FLAT;
+  const tax = Math.max(0, cartTotal - discountAmount) * 0.08;
+  const total = Math.max(0, cartTotal - discountAmount) + shipping + tax;
+
+  const handleApplyCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!codeInput.trim()) return;
+    const ok = applyDiscountCode(codeInput);
+    if (ok) {
+      push(`Discount code ${codeInput.toUpperCase()} applied!`, "success");
+      setCodeInput("");
+    } else {
+      push("Invalid discount code. Try SHOPAI10, WELCOME20, or FLASH50.", "error");
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -42,10 +76,17 @@ export function Cart() {
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-display font-semibold text-white truncate">{item.product.name}</h3>
-                  <p className="text-sm text-gray-400 truncate">{item.product.category}</p>
-                  <p className="text-lg font-bold gradient-text mt-1">
-                    ${item.product.price.toFixed(2)}
-                  </p>
+                  <p className="text-sm text-gray-400 truncate">{item.product.brand} · {item.product.category}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-lg font-bold gradient-text">
+                      ${item.product.price.toFixed(2)}
+                    </span>
+                    {item.product.original_price && item.product.original_price > item.product.price && (
+                      <span className="text-xs text-gray-500 line-through">
+                        ${item.product.original_price.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -95,23 +136,80 @@ export function Cart() {
           <div className="lg:col-span-1">
             <div className="glass-dark p-6 sticky top-24">
               <h2 className="font-display text-xl font-bold text-white mb-4">Order Summary</h2>
+
+              {/* Discount code input */}
+              <div className="mb-4">
+                {discountCode ? (
+                  <div className="flex items-center justify-between rounded-xl border border-violet-500/30 bg-violet-600/10 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Check size={16} className="text-violet-300" />
+                      <div>
+                        <p className="text-sm font-medium text-violet-200">{discountCode}</p>
+                        <p className="text-xs text-violet-300/70">{discountPercent}% off applied</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={removeDiscountCode}
+                      className="rounded-lg p-1 text-gray-400 hover:text-white"
+                      aria-label="Remove discount code"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleApplyCode} className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Tag size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                      <input
+                        type="text"
+                        value={codeInput}
+                        onChange={(e) => setCodeInput(e.target.value)}
+                        placeholder="Discount code"
+                        className="input-field !py-2.5 pl-9 text-sm"
+                      />
+                    </div>
+                    <button type="submit" className="btn-secondary !px-4 !py-2.5 text-sm">
+                      Apply
+                    </button>
+                  </form>
+                )}
+                {!discountCode && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    Try: SHOPAI10, WELCOME20, FLASH50
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between text-gray-400">
                   <span>Subtotal</span>
                   <span className="text-white">${cartTotal.toFixed(2)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-violet-300">
+                    <span>Discount ({discountPercent}%)</span>
+                    <span>-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-400">
                   <span>Shipping</span>
-                  <span className="text-green-400">Free</span>
+                  <span className={shipping === 0 ? "text-green-400" : "text-white"}>
+                    {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
+                  </span>
                 </div>
+                {shipping > 0 && (
+                  <p className="text-xs text-gray-500">
+                    Add ${(SHIPPING_FREE_THRESHOLD - cartTotal).toFixed(2)} more for free shipping
+                  </p>
+                )}
                 <div className="flex justify-between text-gray-400">
                   <span>Tax (8%)</span>
-                  <span className="text-white">${(cartTotal * 0.08).toFixed(2)}</span>
+                  <span className="text-white">${tax.toFixed(2)}</span>
                 </div>
                 <div className="pt-3 border-t border-white/10 flex justify-between">
                   <span className="font-semibold text-white">Total</span>
                   <span className="font-display text-xl font-bold gradient-text">
-                    ${(cartTotal + cartTotal * 0.08).toFixed(2)}
+                    ${total.toFixed(2)}
                   </span>
                 </div>
               </div>

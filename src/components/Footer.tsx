@@ -43,6 +43,7 @@ export function Footer() {
             <ul className="space-y-3">
               {[
                 { label: "Home", path: "/" },
+                { label: "AI Search", path: "/discover" },
                 { label: "About", path: "/about" },
                 { label: "Pricing", path: "/pricing" },
                 { label: "Contacts", path: "/contacts" },
@@ -65,6 +66,21 @@ export function Footer() {
               Support
             </h4>
             <ul className="space-y-3">
+              {[
+                { label: "Wishlist", path: "/wishlist" },
+                { label: "Order History", path: "/orders" },
+                { label: "My Dashboard", path: "/dashboard" },
+                { label: "Compare Products", path: "/compare" },
+              ].map((link) => (
+                <li key={link.path}>
+                  <Link
+                    to={link.path}
+                    className="text-sm text-gray-400 hover:text-violet-300 transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
               {["Help Center", "Track Order", "Returns", "Shipping Info", "FAQ"].map((item) => (
                 <li key={item}>
                   <a
