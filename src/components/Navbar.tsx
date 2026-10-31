@@ -227,7 +227,6 @@ export function Navbar() {
                       Sign Out
                     </button>
                   </>
-                  </>
                 ) : (
                   <>
                     <Link to="/signin" className="btn-secondary w-full">
