@@ -118,7 +118,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     image_url: "https://images.pexels.com/photos/777001/pexels-photo-777001.jpeg?auto=compress&cs=tinysrgb&w=800",
     gallery: [
       "https://images.pexels.com/photos/777001/pexels-photo-777001.jpeg?auto=compress&cs=tinysrgb&w=800",
-      "https://images.pexels.com/photos/777002/pexels-photo-777002.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "https://images.pexels.com/photos/1714208/pexels-photo-1714208.jpeg?auto=compress&cs=tinysrgb&w=800",
     ],
     specs: { size: "32 inch", resolution: "4K UHD", panel: "IPS", color: "99% DCI-P3", ports: "USB-C 90W" },
     rating: 4.7,

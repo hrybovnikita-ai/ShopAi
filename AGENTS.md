@@ -31,9 +31,13 @@ has no hosted Supabase project, so the Supabase backend it depends on
 - **Seed guard.** Migrations run once per database volume; the init script skips
   them when `public.products` already exists so the 8 seed products are not
   duplicated on restart.
-- **Contact form needs a signed-in user.** `contact_messages` is owner-scoped by
-  RLS (`auth.uid() = user_id`) and only granted to `authenticated`, so an
-  anonymous submit fails by design.
+- **Contact form accepts visitors.** `contact_messages` keeps owner-scoped
+  CRUD for `authenticated`, plus a permissive `anon_insert_messages` INSERT
+  policy (`WITH CHECK (true)`) from
+  `20261025165600_allow_anon_contact_insert.sql`, so the public form works
+  signed out. Anon can only insert — it cannot read messages back, so a REST
+  insert with `Prefer: return=representation` fails RLS while a plain insert
+  succeeds.
 - **Sandbox-only Vite config.** When `BASE44_PREVIEW_MODE=1`, `vite.config.ts`
   binds `0.0.0.0`, allows the preview host names, and proxies `/auth`, `/rest`
   and `/functions` to the gateway so supabase-js stays same-origin. With the
